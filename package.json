@@ -1,0 +1,38 @@
+{
+  "name": "pi-agent-browser",
+  "version": "0.1.0",
+  "description": "Browser automation tool for pi — interactive browsing, screenshots with inline vision, and session cleanup via agent-browser CLI",
+  "keywords": [
+    "pi-package",
+    "browser",
+    "automation",
+    "puppeteer",
+    "screenshots",
+    "web-scraping",
+    "agent-browser"
+  ],
+  "license": "MIT",
+  "author": "pi",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/pi-agent-browser.git"
+  },
+  "homepage": "https://github.com/user/pi-agent-browser#readme",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "files": [
+    "extensions/",
+    "LICENSE",
+    "README.md"
+  ],
+  "pi": {
+    "extensions": ["extensions/agent-browser.ts"]
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-tui": "*",
+    "@sinclair/typebox": "*"
+  }
+}
