@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/images/banner.jpg" alt="pi-agent-browser banner" style="max-width: 100%; border-radius: 10px;" />
+</p>
+
 # 🌐 pi-agent-browser
 
 **Give your AI a real browser.** A [pi](https://github.com/mariozechner/pi-coding-agent) extension that lets the LLM navigate, interact with, and see web pages through a fully automated Chromium instance.
