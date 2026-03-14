@@ -10,6 +10,11 @@ import {
 } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
+import {
+  ensureInstalled,
+  resolveAgentBrowserCommand,
+  runCommandSpec,
+} from "./agent-browser-install-check.js";
 
 const TOOL_DESCRIPTION = `Browser automation via agent-browser CLI.
 Workflow: open URL → snapshot -i (get @refs like @e1) → interact → re-snapshot after page changes.
@@ -33,44 +38,6 @@ function writeTempFile(content: string, prefix: string): string {
   const file = join(dir, "output.txt");
   writeFileSync(file, content);
   return file;
-}
-
-async function ensureInstalled(pi: ExtensionAPI, ctx: any): Promise<boolean> {
-  const check = await pi.exec("which", ["agent-browser"], { timeout: 5000 });
-  if (check.code === 0 && check.stdout.trim()) {
-    return true;
-  }
-
-  // Not found — prompt user
-  if (!ctx.hasUI) {
-    return false;
-  }
-
-  const ok = await ctx.ui.confirm(
-    "agent-browser not found",
-    "Install agent-browser globally with npm? (npm install -g agent-browser)"
-  );
-  if (!ok) {
-    return false;
-  }
-
-  ctx.ui.notify("Installing agent-browser...", "info");
-  const install = await pi.exec("npm", ["install", "-g", "agent-browser"], { timeout: 120000 });
-  if (install.code !== 0) {
-    ctx.ui.notify(`Installation failed: ${install.stderr}`, "error");
-    return false;
-  }
-
-  // Also run install for Chromium
-  ctx.ui.notify("Downloading Chromium...", "info");
-  const chromium = await pi.exec("agent-browser", ["install"], { timeout: 120000 });
-  if (chromium.code !== 0) {
-    ctx.ui.notify(`Chromium install failed: ${chromium.stderr}`, "error");
-    return false;
-  }
-
-  ctx.ui.notify("agent-browser installed successfully!", "info");
-  return true;
 }
 
 export default function agentBrowserExtension(pi: ExtensionAPI) {
@@ -133,10 +100,10 @@ export default function agentBrowserExtension(pi: ExtensionAPI) {
     },
 
     async execute(toolCallId, params, signal, onUpdate, ctx) {
-      const installed = await ensureInstalled(pi, ctx);
-      if (!installed) {
+      const agentBrowserCommand = await ensureInstalled(pi, ctx);
+      if (!agentBrowserCommand) {
         return {
-          content: [{ type: "text", text: "agent-browser is not installed. Install manually with: npm install -g agent-browser && agent-browser install" }],
+          content: [{ type: "text", text: "agent-browser is not available. Fix with: npm install -g agent-browser && agent-browser install. If already installed, restart pi and ensure npm global bin is on PATH." }],
           details: { error: "not-installed" },
           isError: true,
         };
@@ -146,7 +113,7 @@ export default function agentBrowserExtension(pi: ExtensionAPI) {
       const parts = commandStr.split(/\s+/);
       const action = parts[0].toLowerCase();
 
-      const result = await pi.exec("agent-browser", parts, {
+      const result = await runCommandSpec(pi, agentBrowserCommand, parts, {
         signal,
         timeout: 60000,
       });
@@ -215,7 +182,9 @@ export default function agentBrowserExtension(pi: ExtensionAPI) {
   // Clean up browser on session exit
   pi.on("session_shutdown", async (_event, _ctx) => {
     try {
-      await pi.exec("agent-browser", ["close"], { timeout: 5000 });
+      const agentBrowserCommand = await resolveAgentBrowserCommand(pi);
+      if (!agentBrowserCommand) return;
+      await runCommandSpec(pi, agentBrowserCommand, ["close"], { timeout: 5000 });
     } catch {
       // Ignore — browser may already be closed
     }

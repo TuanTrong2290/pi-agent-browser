@@ -19,6 +19,9 @@
   },
   "homepage": "https://github.com/coctostan/pi-agent-browser#readme",
   "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  },
   "engines": {
     "node": ">=20.0.0"
   },
